@@ -7,8 +7,7 @@ namespace Mmodrow.Minecraft.RecipeParser.Models.Minecraft
         [JsonIgnore]
         internal string Name { get; set; } = "";
 
-        [JsonPropertyName("replace")]
-        internal bool Replace { get; set; }
+        [JsonPropertyName("replace")] internal bool Replace { get; set; } = false;
 
         [JsonPropertyName("values")] public string[] Values { get; set; } = Array.Empty<string>();
 

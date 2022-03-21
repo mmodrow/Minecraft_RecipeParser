@@ -26,9 +26,16 @@ namespace Mmodrow.Minecraft.RecipeParser.Parser
             foreach (var recipeJsonString in recipeJsonStrings.ToArray())
             {
                 var deserialized = JsonConvert.DeserializeObject<Recipe>(recipeJsonString);
-                Enum.TryParse<RecipeType>(deserialized.Type, out var parsedRecipeType);
 
-                deserialized.ParsedType = parsedRecipeType;
+                if (deserialized is null)
+                {
+                    throw new NullReferenceException(nameof(deserialized));
+                }
+
+                if (Enum.TryParse<RecipeType>(deserialized.Type, out var parsedRecipeType))
+                {
+                    deserialized.ParsedType = parsedRecipeType;
+                }
             }
             return recipes;
         }
