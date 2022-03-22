@@ -1,14 +1,9 @@
-﻿using Mmodrow.Minecraft.RecipeParser.Models.Minecraft;
-using Mmodrow.Minecraft.RecipeParser.Parser;
+﻿using CommandLine;
+using mmodrow.minecraft.recipeParser;
 
-Console.WriteLine("Hello, World!");
-var jarReader = new JarReader(@"C:\Users\marcm\AppData\Roaming\.minecraft\versions\1.18.2\1.18.2.jar");
-
-var itemTagParser = new TagParser(jarReader, new NamingMapper(), TagType.Items);
-var tags = itemTagParser.GetTags();
-
-var recipeParser = new RecipeParser(jarReader, tags);
-var recipeJsonStrings = recipeParser.GetRecipes();
-
+var importer = new ImportModelsFromJar();
+Parser.Default.ParseArguments<RecipeParserOptions>(args)
+    .WithParsed(importer.Import)
+    .WithNotParsed(_ => Environment.ExitCode = 3);
 
 Console.WriteLine("end");

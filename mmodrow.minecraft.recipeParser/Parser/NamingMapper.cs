@@ -5,7 +5,6 @@ namespace Mmodrow.Minecraft.RecipeParser.Parser;
 public class NamingMapper
 {
     private readonly Regex pascalCaseWordBreak = new("((?!^).)([A-Z])");
-    private readonly Regex snakeCaseWordBreak = new("_([a-z0-9])");
     private readonly Regex namespacePrefix = new("^([^:]+:)");
     private readonly Regex tagFlagPrefix = new("^(#)");
 
@@ -36,7 +35,7 @@ public class NamingMapper
             snakeCasedName = tagFlagPrefix.Replace(snakeCasedName, "");
         }
 
-        return snakeCaseWordBreak.Replace(snakeCasedName, @"\U$1");
+        return string.Join("" ,snakeCasedName.Split('_').Select(token => token[..1].ToUpper() + token[1..]));
     }
 
     

@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.Linq;
+﻿using System.Text.Json;
 using Mmodrow.Minecraft.RecipeParser.Models.Minecraft;
 
 namespace Mmodrow.Minecraft.RecipeParser.Parser;
@@ -21,14 +20,14 @@ public class TagParser : BaseJarParser
         return base.GetJsonStrings(fileNamePrefix, TagDirectoryName);
     }
 
-    internal Dictionary<string,Tag> GetTags()
+    internal Dictionary<string,Tag> GetTags(bool collapseTags)
     {
         var tagJsonStrings = GetJsonStrings();
 
         var tags = tagJsonStrings.Select(kvp =>
         {
             var (key, value) = kvp;
-            var deserialized = JsonConvert.DeserializeObject<Tag>(value);
+            var deserialized = JsonSerializer.Deserialize<Tag>(value);
             if (deserialized is null)
             {
                 return null;
@@ -41,14 +40,29 @@ public class TagParser : BaseJarParser
         foreach (var tag in tags)
         {
             FlattenValues(tag, tags);
+            if (collapseTags)
+            {
+                CollapseTag(tag);
+            }
         }
 
         return tags.ToDictionary(t => t.Name, t => t);
     }
 
+    private static void CollapseTag(Tag tag)
+    {
+        var oakItem = tag.FlattenedValues.FirstOrDefault(value => value.StartsWith("oak"));
+        if (oakItem is not null)
+        {
+            tag.FlattenedValues = new List<string> {oakItem};
+        }
+        
+        tag.FlattenedValues = tag.FlattenedValues.Take(1).ToList();
+    }
+
     internal void FlattenValues(Tag tag, ICollection<Tag> tags)
     {
-        if (tag.FlattenedValues.Count >= tag.Values.Length)
+        if (tag.FlattenedValues.Any())
         {
             return;
         }
