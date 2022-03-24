@@ -10,29 +10,29 @@ public class NamingMapper
 
     internal string MinecraftNameToEnumName(string minecraftName)
     {
-        return SnakeCaseToPascalCase(minecraftName);
+        return this.SnakeCaseToPascalCase(minecraftName);
     }
 
     internal string EnumNameToMinecraftName(string minecraftName, bool addMinecraftNamespace = true)
     {
-        return PascalCaseToSnakeCase(minecraftName, addMinecraftNamespace ? "minecraft:" : string.Empty);
+        return this.PascalCaseToSnakeCase(minecraftName, addMinecraftNamespace ? "minecraft:" : string.Empty);
     }
 
     internal string PascalCaseToSnakeCase(string pascalCasedName, string prefix)
     {
-        return prefix + pascalCaseWordBreak.Replace(pascalCasedName, @"$1_\L$2").ToLower();
+        return prefix + this.pascalCaseWordBreak.Replace(pascalCasedName, @"$1_\L$2").ToLower();
     }
 
     internal string SnakeCaseToPascalCase(string snakeCasedName, bool dropNamespacePrefix = true, bool dropTagFlag = true)
     {
         if (dropNamespacePrefix)
         {
-            snakeCasedName = namespacePrefix.Replace(snakeCasedName, "");
+            snakeCasedName = this.namespacePrefix.Replace(snakeCasedName, "");
         }
 
         if (dropTagFlag)
         {
-            snakeCasedName = tagFlagPrefix.Replace(snakeCasedName, "");
+            snakeCasedName = this.tagFlagPrefix.Replace(snakeCasedName, "");
         }
 
         return string.Join("" ,snakeCasedName.Split('_').Select(token => token[..1].ToUpper() + token[1..]));

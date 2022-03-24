@@ -24,7 +24,7 @@ public class JarReader
             directory += "/";
         }
         var recipePathPrefix = directory + fileNamePrefix;
-        var recipeFilePaths = jarFile.Entries.Where(entry => entry.FullName.StartsWith(recipePathPrefix)).ToArray();
+        var recipeFilePaths = this.jarFile.Entries.Where(entry => entry.FullName.StartsWith(recipePathPrefix)).ToArray();
         var recipeFileContents = recipeFilePaths
             .Select(entry => new KeyValuePair<string,string>(
                 entry.FullName,

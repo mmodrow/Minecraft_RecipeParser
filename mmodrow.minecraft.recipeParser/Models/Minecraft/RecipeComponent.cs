@@ -18,10 +18,10 @@ namespace Mmodrow.Minecraft.RecipeParser.Models.Minecraft
         {
             get
             {
-                var name = Item;
+                var name = this.Item;
                 if (string.IsNullOrWhiteSpace(name))
                 {
-                    name = Tag;
+                    name = this.Tag;
                 }
 
                 return name;
@@ -29,14 +29,14 @@ namespace Mmodrow.Minecraft.RecipeParser.Models.Minecraft
         }
 
         [JsonIgnore]
-        public bool IsTag => string.IsNullOrWhiteSpace(Item) && !string.IsNullOrWhiteSpace(Tag);
+        public bool IsTag => string.IsNullOrWhiteSpace(this.Item) && !string.IsNullOrWhiteSpace(this.Tag);
 
         public override string ToString()
         {
-            return $"{Name} ({Count})";
+            return $"{this.Name} ({this.Count})";
         }
 
         [JsonIgnore]
-        public bool IsEmpty => string.IsNullOrWhiteSpace(Item + Tag) && Count == 0;
+        public bool IsEmpty => string.IsNullOrWhiteSpace(this.Item + this.Tag) && this.Count <= 1;
     }
 }

@@ -23,7 +23,7 @@ namespace Mmodrow.Minecraft.RecipeParser.Parser
         {
             var recipes = new Dictionary<string, ICollection<Recipe>>();
 
-            var recipeJsonStrings = GetJsonStrings(recipePrefix).Values;
+            var recipeJsonStrings = this.GetJsonStrings(recipePrefix).Values;
             foreach (var recipeJsonString in recipeJsonStrings.ToArray())
             {
                 var deserialized = JsonSerializer.Deserialize<Recipe>(recipeJsonString);
@@ -33,17 +33,22 @@ namespace Mmodrow.Minecraft.RecipeParser.Parser
                     throw new NullReferenceException(nameof(deserialized));
                 }
 
-                if (Enum.TryParse<RecipeType>(namingMapper.MinecraftNameToEnumName(deserialized.Type), out var parsedRecipeType))
+                if (Enum.TryParse<RecipeType>(this.namingMapper.MinecraftNameToEnumName(deserialized.Type), out var parsedRecipeType))
                 {
                     deserialized.ParsedType = parsedRecipeType;
                 }
 
-                if (!recipes.ContainsKey(deserialized.ResultName))
+                if (deserialized.Result.IsEmpty)
                 {
-                    recipes[deserialized.ResultName] = new List<Recipe>();
+                    continue;
                 }
 
-                recipes[deserialized.ResultName].Add(deserialized);
+                if (!recipes.ContainsKey(deserialized.Result.Name))
+                {
+                    recipes[deserialized.Result.Name] = new List<Recipe>();
+                }
+
+                recipes[deserialized.Result.Name].Add(deserialized);
             }
             return recipes;
         }

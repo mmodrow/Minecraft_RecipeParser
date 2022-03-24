@@ -13,7 +13,7 @@ public class BaseJarParser
 
     protected Dictionary<string, string> GetJsonStrings(string fileNamePrefix = "", string dataDirectorySuffix = "")
     {
-        var dataDirectory = dataDirectoryPrefix;
+        var dataDirectory = this.dataDirectoryPrefix;
         if (string.IsNullOrWhiteSpace(dataDirectorySuffix))
         {
             return this.jarReader.GetJsonStringsFromJarDirectory(dataDirectory, fileNamePrefix);

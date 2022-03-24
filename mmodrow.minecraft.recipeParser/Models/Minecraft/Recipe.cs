@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Collections;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
@@ -19,79 +20,142 @@ namespace Mmodrow.Minecraft.RecipeParser.Models.Minecraft
         /// string, RecipeComponent or IList[RecipeComponent]
         /// </summary>
         [JsonPropertyName("key")]
+        public Dictionary<string, object> DeserializedKey
+        {
+            get => this.Key;
+            set
+            {
+                foreach (var valueKey in value.Keys)
+                {
+                    this.Key[valueKey] = this.ParseRecipeComponentListFromDifferentTypes(value[valueKey]);
+                }
+            }
+        }
+
+        [JsonIgnore]
         public Dictionary<string, object> Key { get; set; } = new();
+        
+        [JsonPropertyName("ingredient")]
+        public object DeserializedIngredient
+        {
+            get => this.Ingredients.ToList<object>();
+            set
+            {
+                this.Ingredients = this.ParseRecipeComponentListFromDifferentTypes(value);
+            }
+        }
 
         /// <summary>
         /// RecipeComponent or IList[RecipeComponent]
         /// </summary>
         [JsonPropertyName("ingredients")]
-        public List<object> Ingredients { get; set; } = new();
-
-        [JsonPropertyName("result")]
-        public object Result { 
+        public List<object> DeserializedIngredients
+        {
+            get => this.Ingredients.ToList<object>();
             set
             {
-                RecipeComponent recipeComponent = new();
-                switch (value)
-                {
-                    case JsonObject valueObject:
-                        recipeComponent = JsonSerializer.Deserialize <RecipeComponent>(valueObject.ToJsonString()) ?? recipeComponent;
+                this.Ingredients = this.ParseRecipeComponentListFromDifferentTypes(value);
+            }
+        }
 
-                        this.IsResultTag = recipeComponent.IsTag;
+        [JsonIgnore] public IList<RecipeComponent> Ingredients { get; set; } = new List<RecipeComponent>();
 
-                        this.ResultName = !string.IsNullOrWhiteSpace(recipeComponent.Item) ? recipeComponent.Item :
-                            !string.IsNullOrWhiteSpace(recipeComponent.Tag) ? recipeComponent.Tag : string.Empty;
-
-                        this.ResultCount = Math.Max(recipeComponent.Count, 1);
-                        break;
-                    case JsonElement valueElement:
-                        switch (valueElement.ValueKind)
-                        {
-                            case JsonValueKind.String:
-                                this.ResultName = valueElement.GetRawText().Trim('"');
-                                break;
-                            case JsonValueKind.Object:
-                                recipeComponent = valueElement.Deserialize<RecipeComponent>() ?? recipeComponent;
-                                break;
-                            case JsonValueKind.Undefined:
-                            case JsonValueKind.Array:
-                            case JsonValueKind.Number:
-                            case JsonValueKind.True:
-                            case JsonValueKind.False:
-                            case JsonValueKind.Null:
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
-
-                        break;
-                    default:
-                        this.ResultName = value.ToString() ?? string.Empty;
-                        break;
-                }
+        [JsonPropertyName("result")]
+        public object DeserializedResult { 
+            set
+            {
+                var recipeComponent = this.ParseRecipeComponentFromDifferentTypes(value);
 
                 if (recipeComponent.IsEmpty)
                 {
                     return;
                 }
 
-                ResultName = recipeComponent.Name;
-                IsResultTag = recipeComponent.IsTag;
-                ResultCount = recipeComponent.Count;
+                this.Result = recipeComponent;
             }
         }
 
-        [JsonIgnore] public string ResultName { get; set; } = "";
-
-        [JsonIgnore]
-        public bool IsResultTag { get; set; }
-
-        [JsonPropertyName("count")] public int Count
+        private IList<RecipeComponent> ParseRecipeComponentListFromDifferentTypes(object deserializedRecipeComponent)
         {
-            get => ResultCount;
-            set => ResultCount = value;
+            if (deserializedRecipeComponent is not JsonElement {ValueKind: JsonValueKind.Array} valueElement)
+            {
+                return new List<RecipeComponent> {this.ParseRecipeComponentFromDifferentTypes(deserializedRecipeComponent)};
+            }
+
+            var recipeComponents = new List<RecipeComponent>();
+            // ReSharper disable once ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
+            foreach (var individualComponent in valueElement.EnumerateArray())
+            {
+                var deserializedIndividualComponent = individualComponent.Deserialize<RecipeComponent>();
+                if (deserializedIndividualComponent is not null && !deserializedIndividualComponent.IsEmpty)
+                {
+                    recipeComponents.Add(deserializedIndividualComponent);
+                }
+            }
+
+            return recipeComponents;
+
         }
 
-        [JsonIgnore] public int ResultCount { get; set; } = 1;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
+        // ReSharper disable once MemberCanBeMadeStatic.Local
+        private RecipeComponent ParseRecipeComponentFromDifferentTypes(object deserializedRecipeComponent)
+        {
+            RecipeComponent recipeComponent = new();
+
+            switch (deserializedRecipeComponent)
+            {
+                case JsonObject deserializedObject:
+                    recipeComponent = JsonSerializer.Deserialize<RecipeComponent>(deserializedObject.ToJsonString()) ??
+                                      recipeComponent;
+                    break;
+                case JsonElement deserializedElement:
+                    switch (deserializedElement.ValueKind)
+                    {
+                        case JsonValueKind.String:
+                            recipeComponent.Item = deserializedElement.GetRawText().Trim('"');
+                            break;
+                        case JsonValueKind.Object:
+                            recipeComponent = deserializedElement.Deserialize<RecipeComponent>() ?? recipeComponent;
+                            break;
+                        case JsonValueKind.Undefined:
+                        case JsonValueKind.Array:
+                        case JsonValueKind.Number:
+                        case JsonValueKind.True:
+                        case JsonValueKind.False:
+                        case JsonValueKind.Null:
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+
+                    break;
+                case IList deserializedList:
+                    if (deserializedList.Count == 1)
+                    {
+                        recipeComponent = JsonSerializer.Deserialize<RecipeComponent>(deserializedList[0]?.ToString() ?? string.Empty) ??
+                                          recipeComponent;
+                    }
+                    else
+                    {
+                        //TODO: here we have alternative items, that are not defined by a common tag
+                        recipeComponent = recipeComponent;
+                    }
+                    break;
+                default:
+                    recipeComponent.Item = deserializedRecipeComponent.ToString() ?? string.Empty;
+                    break;
+            }
+
+            return recipeComponent;
+        }
+
+        [JsonIgnore] public RecipeComponent Result { get; set; } = new();
+        
+        [JsonPropertyName("count")] public int Count
+        {
+            get => this.Result.Count;
+            set => this.Result.Count = value;
+        }
 
         [JsonPropertyName("experience")] internal double? Experience { get; set; } = null;
 
@@ -105,18 +169,17 @@ namespace Mmodrow.Minecraft.RecipeParser.Models.Minecraft
 
         [JsonIgnore]
         public bool IsEmpty =>
-            string.IsNullOrWhiteSpace(Type + Group + ResultName)
-            && !Pattern.Any()
-            && !Key.Any()
-            && !Ingredients.Any()
-            && !IsResultTag
-            && ResultCount == 1
-            && Experience is null
-            && CookingTime == 0;
+            string.IsNullOrWhiteSpace(this.Type + this.Group )
+            && !this.Pattern.Any()
+            && !this.DeserializedKey.Any()
+            && !this.DeserializedIngredients.Any()
+            && !this.Result.IsEmpty
+            && this.Experience is null
+            && this.CookingTime == 0;
 
         public override string ToString()
         {
-            return $"{ResultName} => {ParsedType}";
+            return $"{this.Result.Name} => {this.ParsedType}";
         }
     }
 }

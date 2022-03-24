@@ -7,7 +7,7 @@ public class TagParser : BaseJarParser
 {
     private readonly TagType tagType;
     private readonly NamingMapper namingMapper;
-    internal string TagDirectoryName => namingMapper.EnumNameToMinecraftName(tagType.ToString(), false);
+    internal string TagDirectoryName => this.namingMapper.EnumNameToMinecraftName(this.tagType.ToString(), false);
 
     internal TagParser(JarReader jarReader, NamingMapper namingMapper, TagType tagType) : base(jarReader, @"data/minecraft/tags/")
     {
@@ -17,12 +17,12 @@ public class TagParser : BaseJarParser
 
     internal Dictionary<string, string> GetJsonStrings(string fileNamePrefix = "")
     {
-        return base.GetJsonStrings(fileNamePrefix, TagDirectoryName);
+        return base.GetJsonStrings(fileNamePrefix, this.TagDirectoryName);
     }
 
     internal Dictionary<string,Tag> GetTags(bool collapseTags)
     {
-        var tagJsonStrings = GetJsonStrings();
+        var tagJsonStrings = this.GetJsonStrings();
 
         var tags = tagJsonStrings.Select(kvp =>
         {
@@ -39,7 +39,7 @@ public class TagParser : BaseJarParser
 
         foreach (var tag in tags)
         {
-            FlattenValues(tag, tags);
+            this.FlattenValues(tag, tags);
             if (collapseTags)
             {
                 CollapseTag(tag);
@@ -74,7 +74,7 @@ public class TagParser : BaseJarParser
             {
                 name = name.Replace("#", string.Empty);
                 var referencedTag = tags.First(t => t.Name == name);
-                FlattenValues(referencedTag, tags);
+                this.FlattenValues(referencedTag, tags);
                 tag.FlattenedValues.AddRange(referencedTag.FlattenedValues);
             }
             else

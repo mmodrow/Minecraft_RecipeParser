@@ -17,10 +17,10 @@ namespace Mmodrow.Minecraft.RecipeParser.Models.Minecraft
 
         public override string ToString()
         {
-            return Name;
+            return this.Name;
         }
 
         [JsonIgnore]
-        public bool IsEmpty => Name == string.Empty && Replace == false && !Values.Any();
+        public bool IsEmpty => this.Name == string.Empty && this.Replace == false && !this.Values.Any();
     }
 }
